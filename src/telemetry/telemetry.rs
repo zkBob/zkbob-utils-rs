@@ -5,7 +5,7 @@ use tracing_subscriber::{fmt, layer::SubscriberExt, prelude::*, EnvFilter, Regis
 
 use super::config::{TelemetryKind, TelemetrySettings};
 
-pub fn init_stdout(name: String, env_filter: String) {
+fn init_stdout(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
 
@@ -17,7 +17,7 @@ pub fn init_stdout(name: String, env_filter: String) {
         .init();
 }
 
-pub fn init_sink(name: String, env_filter: String) {
+fn init_sink(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
 
@@ -29,7 +29,7 @@ pub fn init_sink(name: String, env_filter: String) {
         .init();
 }
 
-pub fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
+fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
     global::set_text_map_propagator(Propagator::new());
 
     let mut agent_pipeline = opentelemetry_jaeger::new_agent_pipeline().with_service_name(name);
@@ -47,7 +47,7 @@ pub fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
         .init();
 }
 
-pub fn setup_telemetry(config: &TelemetrySettings) {
+pub fn setup(config: &TelemetrySettings) {
     let name = "zkbob-relayer".to_string();
     let log_level = config.log_level.into();
 
