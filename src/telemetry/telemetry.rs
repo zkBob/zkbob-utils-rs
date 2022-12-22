@@ -2,9 +2,32 @@ use opentelemetry::{global, runtime::Tokio};
 use opentelemetry_jaeger::Propagator;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_subscriber::{fmt, layer::SubscriberExt, prelude::*, EnvFilter, Registry};
+use serde::{Deserialize, Serialize};
+#[derive(Debug, Serialize, Deserialize, strum::EnumString, Clone)]
+pub enum TelemetryKind {
+    #[strum(serialize = "stdout")]
+    Stdout,
+    #[strum(serialize = "jaeger")]
+    Jaeger,
+}
 
-use super::config::{TelemetryKind, TelemetrySettings};
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TelemetrySettings {
+    pub kind: TelemetryKind,
+    pub endpoint: Option<String>,
+    pub log_level: LogLevel,
+}
 
+
+
+#[derive(Debug, Deserialize, Clone, Serialize, Copy, strum::EnumString, strum_macros::Display)]
+pub enum LogLevel {
+    TRACE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
+}
 fn init_stdout(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
@@ -16,7 +39,7 @@ fn init_stdout(name: String, env_filter: String) {
         .with(JsonStorageLayer)
         .init();
 }
-
+#[allow(dead_code)]
 fn init_sink(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
@@ -49,7 +72,7 @@ fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
 
 pub fn setup(config: &TelemetrySettings) {
     let name = "zkbob-relayer".to_string();
-    let log_level = config.log_level.into();
+    let log_level = config.log_level.to_string();
 
     match config.kind {
         TelemetryKind::Stdout => init_stdout(name, log_level),

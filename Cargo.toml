@@ -16,3 +16,7 @@ tracing-bunyan-formatter = "0.3.3"
 tracing-log = "0.1.2"
 tracing-actix-web = "0.7.0"
 tracing-opentelemetry = "0.18.0"
+strum = { version = "0.24", features = ["derive"] }
+strum_macros = "0.24"
+config = "0.11.0"
+serde-aux = "2.3.0"
