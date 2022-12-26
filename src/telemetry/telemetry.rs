@@ -1,34 +1,11 @@
-use opentelemetry::{global, runtime::Tokio};
-use opentelemetry_jaeger::Propagator;
+use opentelemetry::global;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
-use tracing_subscriber::{fmt, layer::SubscriberExt, prelude::*, EnvFilter, Registry};
-use serde::{Deserialize, Serialize};
-#[derive(Debug, Serialize, Deserialize, strum::EnumString, Clone)]
-pub enum TelemetryKind {
-    #[strum(serialize = "stdout")]
-    Stdout,
-    #[strum(serialize = "jaeger")]
-    Jaeger,
-}
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::prelude::*;
+use tracing_subscriber::{EnvFilter, Registry};
+use crate::configuration::{self, TelemetrySettings};
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct TelemetrySettings {
-    pub kind: TelemetryKind,
-    pub endpoint: Option<String>,
-    pub log_level: LogLevel,
-}
-
-
-
-#[derive(Debug, Deserialize, Clone, Serialize, Copy, strum::EnumString, strum_macros::Display)]
-pub enum LogLevel {
-    TRACE,
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR,
-}
-fn init_stdout(name: String, env_filter: String) {
+pub fn init_stdout(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
 
@@ -39,8 +16,8 @@ fn init_stdout(name: String, env_filter: String) {
         .with(JsonStorageLayer)
         .init();
 }
-#[allow(dead_code)]
-fn init_sink(name: String, env_filter: String) {
+
+pub fn init_sink(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
 
@@ -52,8 +29,11 @@ fn init_sink(name: String, env_filter: String) {
         .init();
 }
 
-fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
-    global::set_text_map_propagator(Propagator::new());
+use opentelemetry::runtime::Tokio;
+
+pub fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
+    
+    global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
 
     let mut agent_pipeline = opentelemetry_jaeger::new_agent_pipeline().with_service_name(name);
 
@@ -64,18 +44,20 @@ fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
     let tracer = agent_pipeline.install_batch(Tokio).unwrap();
 
     Registry::default()
-        .with(EnvFilter::new(log_level))
-        .with(fmt::layer().with_target(false))
+        .with(tracing_subscriber::EnvFilter::new(log_level))
+        .with(tracing_subscriber::fmt::layer().with_target(false))
         .with(tracing_opentelemetry::layer().with_tracer(tracer))
         .init();
 }
 
-pub fn setup(config: &TelemetrySettings) {
-    let name = "zkbob-relayer".to_string();
-    let log_level = config.log_level.to_string();
+pub fn setup_telemetry(telemetry_settings: &TelemetrySettings) {
+    let log_level = telemetry_settings.log_level.to_string();
+    let name = telemetry_settings.clone().service_name;
 
-    match config.kind {
-        TelemetryKind::Stdout => init_stdout(name, log_level),
-        TelemetryKind::Jaeger => init_jaeger(name, log_level, &config.endpoint),
+    match telemetry_settings.kind {
+        configuration::TelemetryKind::Stdout => init_stdout(name, log_level),
+        configuration::TelemetryKind::Jaeger => {
+            init_jaeger(name, log_level, &telemetry_settings.endpoint)
+        }
     }
 }
