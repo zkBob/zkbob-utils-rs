@@ -50,7 +50,7 @@ pub fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
         .init();
 }
 
-pub fn setup_telemetry(telemetry_settings: &TelemetrySettings) {
+pub fn setup(telemetry_settings: &TelemetrySettings) {
     let log_level = telemetry_settings.log_level.to_string();
     let name = telemetry_settings.clone().service_name;
 
