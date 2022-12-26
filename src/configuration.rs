@@ -1,9 +1,7 @@
+use config::Config;
 use serde::{Deserialize, Serialize};
 use serde_aux::field_attributes::deserialize_number_from_string;
 use std::string::ToString;
-
-
-use crate::telemetry::telemetry::TelemetrySettings;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ApplicationSettings {
@@ -12,33 +10,55 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub telemetry: TelemetrySettings,
 }
+#[derive(Debug, Serialize, Deserialize, strum::EnumString, Clone)]
+pub enum TelemetryKind {
+    #[strum(serialize = "stdout")]
+    Stdout,
+    #[strum(serialize = "jaeger")]
+    Jaeger,
+}
 
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TelemetrySettings {
+    pub kind: TelemetryKind,
+    pub endpoint: Option<String>,
+    pub log_level: LogLevel,
+    pub service_name: String
+}
 
-
+#[derive(Debug, Deserialize, Clone, Serialize, Copy, strum::EnumString, strum_macros::Display)]
+pub enum LogLevel {
+    TRACE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
+}
 
 pub fn get_config<S>() -> Result<S, config::ConfigError>
 where
     for<'a> S: serde::Deserialize<'a>,
 {
-    let mut settings = config::Config::default();
-    let base_path = std::env::current_dir().expect("failed to determine current dir");
-    let configuration_directory = base_path.join("configuration");
-
-    settings.merge(config::File::from(configuration_directory.join("base.yaml")).required(true))?;
-
     let environment: Environment = std::env::var("APP_ENVIRONMENT")
         .unwrap_or_else(|_| "local".to_string())
         .try_into()
         .expect("failed to parse environment");
 
-    settings
-        .merge(
-            config::File::from(configuration_directory.join(environment.as_str())).required(true),
+    Config::builder()
+        .add_source(config::File::with_name("configuration/base.yaml"))
+        .add_source(config::File::with_name(&format!(
+            "configuration/{}.yaml",
+            environment.as_str()
+        )))
+        .add_source(
+            config::Environment::with_prefix("APP")
+                .prefix_separator("_")
+                .separator("__"), // .try_parsing(true) //if passing a list via env is really necessary
+                                  // .with_list_parse_key("foo.bar.buzz")
+                                  // .list_separator(","),
         )
-        .expect("failed to apply env settings");
-
-    settings.merge(config::Environment::with_prefix("app").separator("__"))?;
-    settings.try_into()
+        .build()?
+        .try_deserialize::<S>()
 }
 
 pub struct Environment {
