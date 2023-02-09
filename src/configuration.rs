@@ -10,6 +10,7 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub telemetry: TelemetrySettings,
 }
+
 #[derive(Debug, Serialize, Deserialize, strum::EnumString, Clone)]
 pub enum TelemetryKind {
     #[strum(serialize = "stdout")]
@@ -23,7 +24,7 @@ pub struct TelemetrySettings {
     pub kind: TelemetryKind,
     pub endpoint: Option<String>,
     pub log_level: LogLevel,
-    pub service_name: String
+    pub service_name: String,
 }
 
 #[derive(Debug, Deserialize, Clone, Serialize, Copy, strum::EnumString, strum_macros::Display)]
@@ -59,6 +60,16 @@ where
         )
         .build()?
         .try_deserialize::<S>()
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Web3Settings {
+    pub provider_endpoint: String,
+    pub provider_timeout_sec: u64,
+    pub pool_address: String,
+    pub gas_limit: Option<u64>,
+    #[serde(skip_serializing)]
+    pub secret_key: Option<String>,
 }
 
 pub struct Environment {

@@ -1,9 +1,9 @@
+use crate::configuration::{self, TelemetrySettings};
 use opentelemetry::global;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{EnvFilter, Registry};
-use crate::configuration::{self, TelemetrySettings};
 
 pub fn init_stdout(name: String, env_filter: String) {
     let env_filter =
@@ -32,7 +32,6 @@ pub fn init_sink(name: String, env_filter: String) {
 use opentelemetry::runtime::Tokio;
 
 pub fn init_jaeger(name: String, log_level: String, endpoint: &Option<String>) {
-    
     global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
 
     let mut agent_pipeline = opentelemetry_jaeger::new_agent_pipeline().with_service_name(name);

@@ -20,3 +20,8 @@ strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 config = "0.13.3"
 serde-aux = "2.3.0"
+tokio = "1.17.0"
+ethabi = "17.1.0"
+web3 = { git = "https://github.com/r0wdy1/rust-web3", branch = "logs_txhash" }
+libzeropool = { git = "https://github.com/zkBob/libzeropool", branch = "multicore-wasm", version = "0.5.6", default-features = false, features = ["in3out127"] }
+secp256k1 = "0.21"
