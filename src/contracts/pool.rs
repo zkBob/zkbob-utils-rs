@@ -88,6 +88,14 @@ impl Pool {
         Ok(root)
     }
 
+    pub async fn pool_id(&self) -> Result<Num<Fr>, PoolError> {
+        let result = self.contract.query("pool_id", (), None, Options::default(), None);
+        let pool_id = timeout(self.timeout, result).await??;
+        let pool_id = u256_to_num(pool_id)
+            .ok_or(PoolError::GeneralError("failed to parse pool_id".to_string()))?;
+        Ok(pool_id)
+    }
+
     // TODO: refactor methods below
     
     pub async fn get_transaction(&self, tx_hash: H256) -> Result<Option<Transaction>, PoolError> {
