@@ -96,8 +96,6 @@ impl Pool {
         Ok(pool_id)
     }
 
-    // TODO: refactor methods below
-    
     pub async fn get_transaction(&self, tx_hash: H256) -> Result<Option<Transaction>, PoolError> {
         let tx = timeout(
             self.timeout,
@@ -106,6 +104,27 @@ impl Pool {
         .await??;
         Ok(tx)
     }
+
+    pub async fn block_timestamp(&self, block_number: U64) -> Result<Option<U256>, PoolError> {
+        let block = timeout(
+            self.timeout,
+            self
+            .web3
+            .eth()
+            .block(BlockId::Number(BlockNumber::Number(block_number))))
+            .await??;
+        match block {
+            Some(block) => Ok(Some(block.timestamp)),
+            None => Ok(None)
+        }
+    }
+
+    pub async fn block_number(&self) -> Result<U64, PoolError> {
+        let block_number = timeout(self.timeout, self.web3.eth().block_number()).await??;
+        Ok(block_number)
+    }
+
+    // TODO: refactor methods below
 
     pub async fn get_transaction_receipt(
         &self,
@@ -200,21 +219,6 @@ impl Pool {
             .map_err(|e| e.to_string())?;
 
         Ok(tx_hash)
-    }
-
-    pub async fn block_timestamp(&self, block_number: U64) -> Result<U256, Web3Error> {
-        let block = self
-            .web3
-            .eth()
-            .block(BlockId::Number(BlockNumber::Number(block_number)))
-            .await?
-            .unwrap();
-        Ok(block.timestamp)
-    }
-
-    pub async fn block_number(&self) -> Result<U64, PoolError> {
-        let block_number = timeout(self.timeout, self.web3.eth().block_number()).await??;
-        Ok(block_number)
     }
 
     async fn gas_price(&self) -> Result<U256, Web3Error> {

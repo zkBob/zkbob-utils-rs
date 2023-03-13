@@ -1,7 +1,7 @@
 use reqwest::{Client, Response};
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Serialize};
 
-use super::{error::RelayerError, types::InfoResponse};
+use super::{error::RelayerError, types::{InfoResponse, TransactionRequest, TransactionResponse, JobResponse}};
 
 pub const LIB_VERSION: &'static str = "2.0.2";
 
@@ -25,9 +25,29 @@ impl RelayerClient {
             .await
     }
 
+    pub async fn send_transactions(&self, request: Vec<TransactionRequest>) -> Result<TransactionResponse, RelayerError> {
+        self.post("sendTransactions", request).await
+    }
+
+    pub async fn job(&self, id: &str) -> Result<JobResponse, RelayerError> {
+        self.get(&format!("job/{}", id)).await
+    }
+
     async fn get<T: DeserializeOwned>(&self, query: &str) -> Result<T, RelayerError> {
         let response = Client::new()
             .get(format!("{}/{}", self.url, query))
+            .header("zkbob-support-id", "zkbob-utils-rs")
+            .header("zkbob-libjs-version", LIB_VERSION)
+            .send()
+            .await?;
+
+        self.handle_response(response).await
+    }
+
+    async fn post<Request: Serialize, Response: DeserializeOwned>(&self, query: &str, request: Request) -> Result<Response, RelayerError> {
+        let response = Client::new()
+            .post(format!("{}/{}", self.url, query))
+            .json(&request)
             .header("zkbob-support-id", "zkbob-utils-rs")
             .header("zkbob-libjs-version", LIB_VERSION)
             .send()

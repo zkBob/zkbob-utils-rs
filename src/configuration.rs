@@ -62,7 +62,7 @@ where
         .try_deserialize::<S>()
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Web3Settings {
     pub provider_endpoint: String,
     pub provider_timeout_sec: u64,
@@ -85,10 +85,17 @@ impl Environment {
         &self.id
     }
 }
+
 impl TryFrom<String> for Environment {
     type Error = String;
 
     fn try_from(s: String) -> Result<Self, Self::Error> {
         Ok(Environment { id: s })
     }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Version {
+    pub ref_name: Option<String>,
+    pub commit_hash: Option<String>,
 }

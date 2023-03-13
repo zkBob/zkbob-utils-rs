@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use strum::Display;
+
+#[derive(Debug, Display)]
 pub enum PoolError {
     BadAbi(std::io::Error),
     GeneralError(String),
