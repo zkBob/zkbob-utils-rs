@@ -10,12 +10,14 @@ pub const LIB_VERSION: &'static str = "2.0.2";
 
 pub struct RelayerClient {
     url: String,
+    client: Client,
 }
 
 impl RelayerClient {
     pub fn new(url: &str) -> Result<RelayerClient, RelayerError> {
         Ok(RelayerClient {
             url: url.to_string(),
+            client: Client::new()
         })
     }
 
@@ -47,7 +49,7 @@ impl RelayerClient {
     }
 
     async fn get<T: DeserializeOwned>(&self, query: &str) -> Result<T, RelayerError> {
-        let response = Client::new()
+        let response = self.client
             .get(format!("{}/{}", self.url, query))
             .header("zkbob-support-id", "zkbob-utils-rs")
             .header("zkbob-libjs-version", LIB_VERSION)
@@ -62,7 +64,7 @@ impl RelayerClient {
         query: &str,
         request: Request,
     ) -> Result<Response, RelayerError> {
-        let response = Client::new()
+        let response = self.client
             .post(format!("{}/{}", self.url, query))
             .json(&request)
             .header("zkbob-support-id", "zkbob-utils-rs")
