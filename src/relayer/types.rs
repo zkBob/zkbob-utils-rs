@@ -47,3 +47,9 @@ pub struct JobResponse {
     pub created_on: u128,
     pub finished_on: Option<u128>,
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FeeResponse {
+    pub fee: String,
+}

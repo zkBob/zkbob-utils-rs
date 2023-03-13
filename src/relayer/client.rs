@@ -1,7 +1,10 @@
 use reqwest::{Client, Response};
 use serde::{de::DeserializeOwned, Serialize};
 
-use super::{error::RelayerError, types::{InfoResponse, TransactionRequest, TransactionResponse, JobResponse}};
+use super::{
+    error::RelayerError,
+    types::{FeeResponse, InfoResponse, JobResponse, TransactionRequest, TransactionResponse},
+};
 
 pub const LIB_VERSION: &'static str = "2.0.2";
 
@@ -25,12 +28,22 @@ impl RelayerClient {
             .await
     }
 
-    pub async fn send_transactions(&self, request: Vec<TransactionRequest>) -> Result<TransactionResponse, RelayerError> {
+    pub async fn send_transactions(
+        &self,
+        request: Vec<TransactionRequest>,
+    ) -> Result<TransactionResponse, RelayerError> {
         self.post("sendTransactions", request).await
     }
 
     pub async fn job(&self, id: &str) -> Result<JobResponse, RelayerError> {
         self.get(&format!("job/{}", id)).await
+    }
+
+    pub async fn fee(&self) -> Result<u64, RelayerError> {
+        let fee: FeeResponse = self.get("fee").await?;
+        fee.fee
+            .parse::<u64>()
+            .map_err(|err| RelayerError::UnknownError(format!("failed to parse fee: {}", err)))
     }
 
     async fn get<T: DeserializeOwned>(&self, query: &str) -> Result<T, RelayerError> {
@@ -44,7 +57,11 @@ impl RelayerClient {
         self.handle_response(response).await
     }
 
-    async fn post<Request: Serialize, Response: DeserializeOwned>(&self, query: &str, request: Request) -> Result<Response, RelayerError> {
+    async fn post<Request: Serialize, Response: DeserializeOwned>(
+        &self,
+        query: &str,
+        request: Request,
+    ) -> Result<Response, RelayerError> {
         let response = Client::new()
             .post(format!("{}/{}", self.url, query))
             .json(&request)
