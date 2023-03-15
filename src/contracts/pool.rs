@@ -15,7 +15,7 @@ use web3::{
 
 use crate::configuration::Web3Settings;
 
-use super::error::PoolError;
+use super::{error::PoolError, dd::DdContract};
 
 type MessageEvent = (U256, H256, Bytes);
 type Events = Vec<LogWithMeta<MessageEvent>>;
@@ -122,6 +122,12 @@ impl Pool {
     pub async fn block_number(&self) -> Result<U64, PoolError> {
         let block_number = timeout(self.timeout, self.web3.eth().block_number()).await??;
         Ok(block_number)
+    }
+
+    pub async fn dd_contract(&self) -> Result<DdContract, PoolError> {
+        let result = self.contract.query("direct_deposit_queue", (), None, Options::default(), None);
+        let dd_contract_address = timeout(self.timeout, result).await??;
+        DdContract::new(dd_contract_address, self.web3.clone(), self.timeout)
     }
 
     // TODO: refactor methods below
