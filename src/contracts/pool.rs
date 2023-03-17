@@ -15,7 +15,7 @@ use web3::{
 
 use crate::configuration::Web3Settings;
 
-use super::error::PoolError;
+use super::{error::PoolError, dd::DdContract};
 
 type MessageEvent = (U256, H256, Bytes);
 type Events = Vec<LogWithMeta<MessageEvent>>;
@@ -96,8 +96,6 @@ impl Pool {
         Ok(pool_id)
     }
 
-    // TODO: refactor methods below
-    
     pub async fn get_transaction(&self, tx_hash: H256) -> Result<Option<Transaction>, PoolError> {
         let tx = timeout(
             self.timeout,
@@ -106,6 +104,33 @@ impl Pool {
         .await??;
         Ok(tx)
     }
+
+    pub async fn block_timestamp(&self, block_number: U64) -> Result<Option<U256>, PoolError> {
+        let block = timeout(
+            self.timeout,
+            self
+            .web3
+            .eth()
+            .block(BlockId::Number(BlockNumber::Number(block_number))))
+            .await??;
+        match block {
+            Some(block) => Ok(Some(block.timestamp)),
+            None => Ok(None)
+        }
+    }
+
+    pub async fn block_number(&self) -> Result<U64, PoolError> {
+        let block_number = timeout(self.timeout, self.web3.eth().block_number()).await??;
+        Ok(block_number)
+    }
+
+    pub async fn dd_contract(&self) -> Result<DdContract, PoolError> {
+        let result = self.contract.query("direct_deposit_queue", (), None, Options::default(), None);
+        let dd_contract_address = timeout(self.timeout, result).await??;
+        DdContract::new(dd_contract_address, self.web3.clone(), self.timeout)
+    }
+
+    // TODO: refactor methods below
 
     pub async fn get_transaction_receipt(
         &self,
@@ -200,21 +225,6 @@ impl Pool {
             .map_err(|e| e.to_string())?;
 
         Ok(tx_hash)
-    }
-
-    pub async fn block_timestamp(&self, block_number: U64) -> Result<U256, Web3Error> {
-        let block = self
-            .web3
-            .eth()
-            .block(BlockId::Number(BlockNumber::Number(block_number)))
-            .await?
-            .unwrap();
-        Ok(block.timestamp)
-    }
-
-    pub async fn block_number(&self) -> Result<U64, PoolError> {
-        let block_number = timeout(self.timeout, self.web3.eth().block_number()).await??;
-        Ok(block_number)
     }
 
     async fn gas_price(&self) -> Result<U256, Web3Error> {
