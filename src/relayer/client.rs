@@ -6,7 +6,7 @@ use super::{
     types::{FeeResponse, InfoResponse, JobResponse, TransactionRequest, TransactionResponse},
 };
 
-pub const LIB_VERSION: &'static str = "2.0.2";
+pub const LIB_VERSION: &str = "2.0.2";
 
 pub struct RelayerClient {
     url: String,
