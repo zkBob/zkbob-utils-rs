@@ -9,7 +9,9 @@ pub fn init_stdout(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
 
-    let formatting_layer = BunyanFormattingLayer::new(name, || std::io::stdout());
+    let formatting_layer = BunyanFormattingLayer::new(name, std::io::stdout)
+        .skip_fields(vec!["file", "log.file"].into_iter())
+        .expect("One of the specified fields cannot be skipped");
     Registry::default()
         .with(env_filter)
         .with(formatting_layer)
@@ -21,7 +23,7 @@ pub fn init_sink(name: String, env_filter: String) {
     let env_filter =
         EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new(env_filter));
 
-    let formatting_layer = BunyanFormattingLayer::new(name, || std::io::sink());
+    let formatting_layer = BunyanFormattingLayer::new(name, std::io::sink);
     Registry::default()
         .with(env_filter)
         .with(formatting_layer)

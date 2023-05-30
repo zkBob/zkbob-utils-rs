@@ -59,9 +59,9 @@ impl Pool {
 
         Ok(Self {
             contract,
-            web3: web3.clone(),
+            web3,
             key,
-            gas_limit: config.gas_limit.map(|gas_limit| U256::from(gas_limit)),
+            gas_limit: config.gas_limit.map(U256::from),
             transact_short_signature: short_signature,
             timeout: Duration::from_secs(config.provider_timeout_sec),
         })
