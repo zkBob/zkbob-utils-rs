@@ -130,6 +130,11 @@ impl Pool {
         DdContract::new(dd_contract_address, self.web3.clone(), self.timeout)
     }
 
+    pub async fn chain_id(&self) -> Result<U256, PoolError> {
+        let chain_id = timeout(self.timeout, self.web3.eth().chain_id()).await??;
+        Ok(chain_id)
+    }
+
     // TODO: refactor methods below
 
     pub async fn get_transaction_receipt(
